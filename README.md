@@ -37,8 +37,9 @@ python3
 
 Finally, you can execute publisher as follows.
 ```
-python3 pcl2_publisher_ros2.py
+colcon build
+ros2 run rs2_light_wrapper rs2_light_node
 
 # To check the topic is working well,
-ros2 topic hz /pcd
+ros2 topic hz /point_cloud
 ```
