@@ -17,18 +17,28 @@ class PCDPublisher(Node):
 
     def __init__(self):
         super().__init__('pcd_publisher_node')
+
+        self.declare_parameter('frame_name', 'camera_frame')
+        self.declare_parameter('depth_width', 320)
+        self.declare_parameter('depth_height', 240)
+        self.declare_parameter('depth_fps', 30)
+        
+        param_frame_name = self.get_parameter('frame_name')
+        param_depth_width = self.get_parameter('depth_width')
+        param_depth_height = self.get_parameter('depth_height')
+        param_depth_fps = self.get_parameter('depth_fps')
        
         # I create a publisher that publishes sensor_msgs.PointCloud2 to the 
         # topic 'pcd'. The value '5' refers to the history_depth, which I 
         # believe is related to the ROS1 concept of queue size. 
         # Read more here: 
         # http://wiki.ros.org/rospy/Overview/Publishers%20and%20Subscribers
-        self.pcd_publisher = self.create_publisher(sensor_msgs.PointCloud2, 'point_cloud', 5)
+        self.pcd_publisher = self.create_publisher(sensor_msgs.PointCloud2, 'rs2_pc', 5)
 
         pipeline = rs.pipeline()
         config = rs.config()
         # You should modify resolution for stream here.
-        config.enable_stream(rs.stream.depth, 320, 240, rs.format.z16, 30)
+        config.enable_stream(rs.stream.depth, param_depth_width.value, param_depth_height.value, rs.format.z16, param_depth_fps.value)
         profile = pipeline.start(config)
         frame_count = 0
         try:
@@ -53,13 +63,15 @@ class PCDPublisher(Node):
 #                        index_point = index_point + 1
 #                verts_valid = np.asanyarray(verts_valid)
 
-                self.pcd = point_cloud(verts, 'map')
+                self.pcd = point_cloud(verts, param_frame_name.value)
                 self.pcd_publisher.publish(self.pcd)
 #                curTime = time.time()
 #                sec = curTime - prevTime
 #                fps = 1/(sec)
                 frame_count += 1
-                print(frame_count)
+                if (frame_count % 10 == 0):
+                    self.get_logger().info('frame_count : %d' % frame_count)
+#                print(frame_count)
 #                prevTime = curTime
         finally:
             pipeline.stop()
